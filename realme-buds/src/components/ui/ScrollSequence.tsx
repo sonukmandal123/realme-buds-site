@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useMotionValueEvent, MotionValue } from "framer-motion";
@@ -12,18 +11,19 @@ export default function ScrollSequence({ progress }: ScrollSequenceProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [images, setImages] = useState<HTMLImageElement[]>([]);
   const [imagesLoaded, setImagesLoaded] = useState(false);
-  
+
   const frameCount = 240;
 
   const drawFrame = useCallback((img: HTMLImageElement | undefined) => {
     if (!canvasRef.current || !img || !img.complete || img.naturalHeight === 0) return;
+
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const windowRatio = window.innerWidth / window.innerHeight;
     const imageRatio = img.width / img.height;
-    
+
     let drawWidth = canvas.width;
     let drawHeight = canvas.height;
     let offsetX = 0;
@@ -43,62 +43,69 @@ export default function ScrollSequence({ progress }: ScrollSequenceProps) {
     ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
   }, []);
 
+  // 🔥 Load images
   useEffect(() => {
-    // const loadedImages: HTMLImageElement[] = [];
+    const loadedImages: HTMLImageElement[] = [];
     let loadedCount = 0;
 
     for (let i = 1; i <= frameCount; i++) {
       const img = new Image();
-      const indexStr = i.toString().padStart(3, '0');
+      const indexStr = i.toString().padStart(3, "0");
       img.src = `/frames/ezgif-frame-${indexStr}.jpg`;
-      
+
       img.onload = () => {
         loadedCount++;
-        // If it's the very first frame and the canvas is ready, draw it
+
         if (i === 1) {
           requestAnimationFrame(() => drawFrame(img));
         }
+
         if (loadedCount === frameCount) {
           setImagesLoaded(true);
         }
       };
-      
+
       loadedImages.push(img);
     }
+
     setImages(loadedImages);
   }, [drawFrame]);
 
+  // 🔥 Handle resize
   useEffect(() => {
     const updateSize = () => {
       if (canvasRef.current) {
         const dpr = window.devicePixelRatio || 1;
+
         canvasRef.current.width = window.innerWidth * dpr;
         canvasRef.current.height = window.innerHeight * dpr;
-        
+
         const currentFrameIndex = Math.min(
           frameCount - 1,
           Math.max(0, Math.round(progress.get() * (frameCount - 1)))
         );
+
         if (images[currentFrameIndex]) {
           requestAnimationFrame(() => drawFrame(images[currentFrameIndex]));
         }
       }
     };
-    
+
     window.addEventListener("resize", updateSize);
-    updateSize(); 
-    
+    updateSize();
+
     return () => window.removeEventListener("resize", updateSize);
   }, [images, progress, drawFrame]);
 
+  // 🔥 Scroll animation
   useMotionValueEvent(progress, "change", (latest) => {
     if (images.length === 0) return;
-    
+
     const frameIndex = Math.min(
       frameCount - 1,
       Math.max(0, Math.floor(latest * frameCount))
     );
-    
+
     if (images[frameIndex]) {
       requestAnimationFrame(() => {
         drawFrame(images[frameIndex]);
@@ -108,6 +115,13 @@ export default function ScrollSequence({ progress }: ScrollSequenceProps) {
 
   return (
     <div className="sticky top-0 left-0 w-full h-screen bg-[#050505] overflow-hidden z-0">
+      {/* ✅ Loader (uses imagesLoaded properly) */}
+      {!imagesLoaded && (
+        <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center text-white z-10">
+          Loading...
+        </div>
+      )}
+
       <canvas
         ref={canvasRef}
         className="w-full h-full object-cover"
