@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useMotionValueEvent, MotionValue } from "framer-motion";
@@ -43,7 +44,7 @@ export default function ScrollSequence({ progress }: ScrollSequenceProps) {
   }, []);
 
   useEffect(() => {
-    const loadedImages: HTMLImageElement[] = [];
+    // const loadedImages: HTMLImageElement[] = [];
     let loadedCount = 0;
 
     for (let i = 1; i <= frameCount; i++) {
